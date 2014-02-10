@@ -17,7 +17,7 @@ class Response extends \Phalcon\DI\Injectable{
 	/**
 	 * In-Place, recursive conversion of array keys in snake_Case to camelCase
 	 * @param  array $snakeArray Array with snake_keys
-	 * @return  no return value, array is edited in place
+	 * @return array no return value, array is edited in place
 	 */
 	protected function arrayKeysToSnake($snakeArray){
 		foreach($snakeArray as $k=>$v){

@@ -15,7 +15,7 @@ use \PhalconRest\Exceptions\HTTPException;
  *     offset=20
  *
  */
-class RESTController extends \PhalconRest\Controllers\BaseController{
+class RESTController extends BaseController{
 
 	/**
 	 * If query string contains 'q' parameter.
@@ -71,7 +71,7 @@ class RESTController extends \PhalconRest\Controllers\BaseController{
 	 * Constructor, calls the parse method for the query string by default.
 	 * @param boolean $parseQueryString true Can be set to false if a controller needs to be called
 	 *        from a different controller, bypassing the $allowedFields parse
-	 * @return void
+	 *
 	 */
 	public function __construct($parseQueryString = true){
 		parent::__construct();
@@ -129,13 +129,14 @@ class RESTController extends \PhalconRest\Controllers\BaseController{
 	 *
 	 * @param  array $allowedFields Allowed fields array for search and partials
 	 * @return boolean              Always true if no exception is thrown
+     * @throws HTTPException
 	 */
 	protected function parseRequest($allowedFields){
 		$request = $this->di->get('request');
 		$searchParams = $request->get('q', null, null);
 		$fields = $request->get('fields', null, null);
 
-		// Set limits and offset, elsewise allow them to have defaults set in the Controller
+		// Set limits and offset, else allow them to have defaults set in the Controller
 		$this->limit = ($request->get('limit', null, null)) ?: $this->limit;
 		$this->offset = ($request->get('offset', null, null)) ?: $this->offset;
 
@@ -145,7 +146,7 @@ class RESTController extends \PhalconRest\Controllers\BaseController{
 			$this->isSearch = true;
 			$this->searchFields = $this->parseSearchParameters($searchParams);
 
-			// This handly snippet determines if searchFields is a strict subset of allowedFields['search']
+			// This handle snippet determines if searchFields is a strict subset of allowedFields['search']
 			if(array_diff(array_keys($this->searchFields), $this->allowedFields['search'])){
 				throw new HTTPException(
 					"The fields you specified cannot be searched.",
@@ -158,7 +159,7 @@ class RESTController extends \PhalconRest\Controllers\BaseController{
 			}
 		}
 
-		// If there's a 'fields' paramter, this is a partial request.  Ensures all the requested fields
+		// If there's a 'fields' parameter, this is a partial request.  Ensures all the requested fields
 		// are allowed in partial responses.
 		if($fields){
 			$this->isPartial = true;
@@ -218,7 +219,8 @@ class RESTController extends \PhalconRest\Controllers\BaseController{
 	 * Ensures that arrays conform to the patterns required by the Response objects.
 	 *
 	 * @param  array $recordsArray Array of records to format as return output
-	 * @return array               Output array.  If there are records (even 1), every record will be an array ex: array(array('id'=>1),array('id'=>2))
+	 * @return array Output array.  If there are records (even 1), every record will be an array ex: array(array('id'=>1),array('id'=>2))
+     * @throws HTTPException
 	 */
 	protected function respond($recordsArray){
 

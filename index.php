@@ -3,7 +3,13 @@
 use Phalcon\DI\FactoryDefault as DefaultDI,
 	Phalcon\Mvc\Micro\Collection,
 	Phalcon\Config\Adapter\Ini as IniConfig,
-	Phalcon\Loader;
+	Phalcon\Loader,
+    PhalconRest\Exceptions\HTTPException,
+    \Phalcon\Db\Adapter\Pdo;
+/**
+ * Read the configuration
+ */
+$config = new IniConfig(__DIR__ . '/config/config.ini');
 
 /**
  * By default, namespaces are assumed to be the same as the path.
@@ -12,10 +18,10 @@ use Phalcon\DI\FactoryDefault as DefaultDI,
  */
 $loader = new Loader();
 $loader->registerNamespaces(array(
-	'PhalconRest\Models' => __DIR__ . '/models/',
-	'PhalconRest\Controllers' => __DIR__ . '/controllers/',
-	'PhalconRest\Exceptions' => __DIR__ . '/exceptions/',
-	'PhalconRest\Responses' => __DIR__ . '/responses/'
+	'PhalconRest\Models' =>  __DIR__ . $config->phalconRest->modelsDir,
+	'PhalconRest\Controllers' => __DIR__ . $config->phalconRest->controllersDir,
+	'PhalconRest\Exceptions' => __DIR__ . $config->phalconRest->exceptionsDir,
+	'PhalconRest\Responses' => __DIR__ . $config->phalconRest->responsesDir
 ))->register();
 
 /**
@@ -39,8 +45,8 @@ $di->set('collections', function(){
  * If the second parameter is a function, then the service is lazy-loaded
  * on its first instantiation.
  */
-$di->setShared('config', function() {
-	return new IniConfig("config/config.ini");
+$di->setShared('config', function() use ($config) {
+	return $config;
 });
 
 // As soon as we request the session service, it will be started.
@@ -68,10 +74,9 @@ $di->set('modelsCache', function() {
 /**
  * Database setup.  Here, we'll use a simple SQLite database of Disney Princesses.
  */
-$di->set('db', function(){
-	return new \Phalcon\Db\Adapter\Pdo\Sqlite(array(
-		'data/database.sqlite'
-	));
+$di->set('db', function() use($config) {
+        $adapter = $config->database->adapter;
+	return new $adapter($config->database->toArray());
 });
 
 /**
@@ -205,10 +210,10 @@ $app->get('/', function() use ($app){
  * the application runs the following function which actually sends the response to the client.
  *
  * The default behavior is to send the Controller's returned value to the client as JSON.
- * However, by parsing the request querystring's 'type' paramter, it is easy to install
+ * However, by parsing the request querystring's 'type' parameter, it is easy to install
  * different response type handlers.  Below is an alternate csv handler.
  */
-$app->after(function() use ($app) {
+$app->after(function() use ($app, $config) {
 
 	// OPTIONS have no body, send the headers, exit
 	if($app->request->getMethod() == 'OPTIONS'){
@@ -224,8 +229,8 @@ $app->after(function() use ($app) {
 		$records = $app->getReturnedValue();
 
 		$response = new \PhalconRest\Responses\JSONResponse();
-		$response->useEnvelope(true) //this is default behavior
-			->convertSnakeCase(true) //this is also default behavior
+		$response->useEnvelope($config->rest->envelope) //this is default behavior
+			->convertSnakeCase($config->rest->snake) //this is also default behavior
 			->send($records);
 
 		return;
@@ -262,19 +267,20 @@ $app->notFound(function () use ($app) {
 		array(
 			'dev' => 'That route was not found on the server.',
 			'internalCode' => 'NF1000',
-			'more' => 'Check route for mispellings.'
+			'more' => 'Check route for misspellings.'
 		)
 	);
 });
 
 /**
  * If the application throws an HTTPException, send it on to the client as json.
- * Elsewise, just log it.
+ * Else wise, just log it.
  * TODO:  Improve this.
  */
 set_exception_handler(function($exception) use ($app){
 	//HTTPException's send method provides the correct response headers and body
 	if(is_a($exception, 'PhalconRest\\Exceptions\\HTTPException')){
+        /** @var PhalconRest\Exceptions\HTTPException $exception */
 		$exception->send();
 	}
 	error_log($exception);

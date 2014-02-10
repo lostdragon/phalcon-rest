@@ -18,7 +18,9 @@ class JSONResponse extends Response{
 
 		// If the query string 'envelope' is set to false, do not use the envelope.
 		// Instead, return headers.
-		$request = $this->di->get('request');
+		/** @var \Phalcon\HTTP\Request $request */
+        $request = $this->di->get('request');
+
 		if($request->get('envelope', null, null) === 'false'){
 			$this->envelope = false;
 		}
@@ -35,7 +37,7 @@ class JSONResponse extends Response{
 			$message = array();
 			$message['_meta'] = array(
 				'status' => $success,
-				'count' => ($error) ? 1 : count($records)
+				'count' => ($error) ? 1 : (is_numeric(key($records)) ? count($records) : 1)
 			);
 
 			// Handle 0 record responses, or assign the records

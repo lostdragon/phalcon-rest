@@ -8,7 +8,12 @@ class HTTPException extends \Exception{
 	public $response;
 	public $additionalInfo;
 
-	public function __construct($message, $code, $errorArray){
+    /**
+     * @param string     $message
+     * @param int        $code
+     * @param array $errorArray
+     */
+    public function __construct($message, $code, $errorArray){
 		$this->message = $message;
 		$this->devMessage = @$errorArray['dev'];
 		$this->errorCode = @$errorArray['internalCode'];

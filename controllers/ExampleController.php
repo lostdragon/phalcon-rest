@@ -30,7 +30,6 @@ class ExampleController extends RESTController{
 		} else {
 			$results = $this->exampleRecords;
 		}
-
 		return $this->respond($results);
 	}
 
